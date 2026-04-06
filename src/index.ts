@@ -1,34 +1,35 @@
 import dotenv from "dotenv";
+import type { Server } from "http";
 import { connectToDatabase } from "./config/database.js";
 import app from "./config/app.js";
 
-
-
-
 dotenv.config();
 
+const DEFAULT_BACKEND_PORT = 8000;
 
+const listenOnPort = (port: number) =>
+  new Promise<Server>((resolve, reject) => {
+    const server = app.listen(port, () => resolve(server));
+    server.once("error", reject);
+  });
 
-
-// Lancement
 const initializeApp = async () => {
- try {
-   const PORT = process.env.PORT || 8000;
-   app.listen(PORT, () => {
-     console.log(`✅ Serveur démarré sur http://localhost:${PORT}`);
-   });
+  try {
+    await connectToDatabase();
 
+    const configuredPort = Number(process.env.PORT || DEFAULT_BACKEND_PORT);
+    const port = Number.isInteger(configuredPort) && configuredPort > 0
+      ? configuredPort
+      : DEFAULT_BACKEND_PORT;
 
-
-
-   await connectToDatabase();
- } catch (err) {
-   console.error("❌ Erreur DB :", err);
-   process.exit(1);
- }
+    await listenOnPort(port);
+    process.env.PORT = String(port);
+    console.log(`[feeti2-back] port configure: ${port}`);
+    console.log(`[feeti2-back] serveur demarre sur http://localhost:${port}`);
+  } catch (err) {
+    console.error("Erreur au demarrage :", err);
+    process.exit(1);
+  }
 };
-
-
-
 
 initializeApp();

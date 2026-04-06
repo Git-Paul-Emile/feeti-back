@@ -99,6 +99,8 @@ model Event {
   isLive       Boolean  @default(false)
   isFeatured   Boolean  @default(false)
   isFavorite   Boolean  @default(false)
+  streamUrl    String?
+  videoUrl     String?
   status       String   @default("draft")
   countryCode  String?
   country      Country?          @relation(fields: [countryCode], references: [code])

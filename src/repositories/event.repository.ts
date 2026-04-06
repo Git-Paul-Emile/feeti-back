@@ -2,6 +2,7 @@ import { prisma } from "../config/database.js";
 
 export const eventRepository = {
   async create(data: {
+    id?: string;
     title: string;
     description: string;
     date: string;
@@ -16,6 +17,8 @@ export const eventRepository = {
     maxAttendees: number;
     duration?: string;
     isLive?: boolean;
+    streamUrl?: string;
+    videoUrl?: string;
     countryCode?: string;
     organizerId: string;
   }) {
@@ -35,6 +38,7 @@ export const eventRepository = {
     const events = await prisma.event.findMany({
       where: {
         status: "published",
+        isLive: false,
         ...(countryCode ? { countryCode } : {}),
         ...(featuredOnly ? { isFeatured: true } : {}),
       },
@@ -105,6 +109,8 @@ export const eventRepository = {
     isFeatured: boolean;
     isFavorite: boolean;
     status: string;
+    streamUrl: string;
+    videoUrl: string;
     countryCode: string | null;
     promotionType: string | null;
     promotionStatus: string | null;

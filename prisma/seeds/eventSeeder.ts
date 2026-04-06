@@ -16,6 +16,7 @@ const eventsData = [
     price: 15000, currency: 'FCFA', category: 'Musique',
     maxAttendees: 3000, attendees: 1250,
     isLive: true, isFeatured: true, isFavorite: false, status: 'published',
+    streamUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
   },
   {
     countryCode: 'CG',
@@ -27,6 +28,7 @@ const eventsData = [
     price: 12000, currency: 'FCFA', category: 'Jazz',
     maxAttendees: 800, attendees: 320,
     isLive: true, isFeatured: false, isFavorite: true, status: 'published',
+    streamUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
   },
   {
     countryCode: 'CG',
@@ -38,6 +40,7 @@ const eventsData = [
     price: 18000, currency: 'FCFA', category: 'Art & Culture',
     maxAttendees: 1200, attendees: 450,
     isLive: true, isFeatured: true, isFavorite: false, status: 'published',
+    streamUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
   },
   {
     countryCode: 'CG',
@@ -108,6 +111,7 @@ const eventsData = [
     price: 20000, currency: 'CDF', category: 'Jazz',
     maxAttendees: 1000, attendees: 480,
     isLive: true, isFeatured: true, isFavorite: false, status: 'published',
+    streamUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
   },
   {
     countryCode: 'CD',
@@ -141,6 +145,7 @@ const eventsData = [
     price: 10000, currency: 'CDF', category: 'Musique',
     maxAttendees: 2000, attendees: 780,
     isLive: true, isFeatured: false, isFavorite: true, status: 'published',
+    streamUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
   },
   {
     countryCode: 'CD',
@@ -167,6 +172,7 @@ const eventsData = [
     price: 10000, currency: 'XAF', category: 'Musique',
     maxAttendees: 5000, attendees: 2300,
     isLive: true, isFeatured: true, isFavorite: false, status: 'published',
+    streamUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
   },
   {
     countryCode: 'GA',
@@ -215,6 +221,7 @@ const eventsData = [
     price: 15000, currency: 'XOF', category: 'Musique',
     maxAttendees: 8000, attendees: 4500,
     isLive: true, isFeatured: true, isFavorite: true, status: 'published',
+    streamUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
   },
   {
     countryCode: 'CI',

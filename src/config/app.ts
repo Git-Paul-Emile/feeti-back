@@ -21,6 +21,7 @@ import walletRouter from "../routes/wallet.routes.js";
 import payoutRouter from "../routes/payout.routes.js";
 import reportingRouter from "../routes/reporting.routes.js";
 import loyaltyRouter from "../routes/loyalty.routes.js";
+import integrationRouter from "../routes/integration.routes.js";
 
 
 
@@ -30,13 +31,18 @@ const app = express();
 
 
 
+const buildLocalhostOrigins = (startPort: number, count: number) =>
+  Array.from({ length: count }, (_, index) => `http://localhost:${startPort + index}`);
+
+const configuredFrontUrl = process.env.FRONT_URL || 'http://localhost:3000';
+const configuredFeetiPlayUrl = process.env.FEETIPLAY_URL || 'http://localhost:5173';
+
 const allowedOrigins = [
-  process.env.FRONT_URL || 'http://localhost:8080',
-  'http://localhost:5173', // Vite default
+  configuredFrontUrl,
+  configuredFeetiPlayUrl,
   'http://localhost:8080',
-  'http://localhost:3000', // React default
-  'http://localhost:3001', // React alternative
-  //'https://horty-coiffure-front.vercel.app/' // URL de production Vercel
+  ...buildLocalhostOrigins(3000, 3),
+  ...buildLocalhostOrigins(5173, 3),
 ];
 
 
@@ -110,6 +116,8 @@ app.use('/api/payouts', payoutRouter);
 app.use('/api/reporting', reportingRouter);
 // ─── Feeti Na Feeti — Fidélité ────────────────────────────────────────────────
 app.use('/api/loyalty', loyaltyRouter);
+// ─── Intégration FeetiPlay ────────────────────────────────────────────────────
+app.use('/api/integration', integrationRouter);
 
 
 
