@@ -14,6 +14,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum EventType {
+  PRESENTIEL
+  STREAMING_LIVE
+  MIXTE
+}
+
 enum DeliveryMethod {
   email
   physical
@@ -95,8 +101,9 @@ model Event {
   maxAttendees Int
   attendees    Int      @default(0)
   duration     String?
-  salesBlocked Boolean  @default(false)
-  isLive       Boolean  @default(false)
+  salesBlocked Boolean   @default(false)
+  isLive       Boolean   @default(false)
+  eventType    EventType @default(PRESENTIEL)
   isFeatured   Boolean  @default(false)
   isFavorite   Boolean  @default(false)
   streamUrl    String?
@@ -118,6 +125,18 @@ model Event {
   promotionStatus    String?   @default("inactive") // active | inactive | expired
   promotionStartDate DateTime?
   promotionEndDate   DateTime?
+}
+
+// Demande de formulaires PDF pour événements en live/mixte
+model LiveEventConsentRequest {
+  id             String    @id @default(cuid())
+  organizerEmail String
+  eventName      String
+  eventType      String    // STREAMING_LIVE | MIXTE
+  consentGiven   Boolean   @default(false)
+  pdfRequestedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 }
 
 enum FeaturedRequestStatus {

@@ -22,6 +22,8 @@ import payoutRouter from "../routes/payout.routes.js";
 import reportingRouter from "../routes/reporting.routes.js";
 import loyaltyRouter from "../routes/loyalty.routes.js";
 import integrationRouter from "../routes/integration.routes.js";
+import liveEventConsentRouter from "../routes/liveEventConsent.routes.js";
+import paymentRouter from "../routes/payment.routes.js";
 
 
 
@@ -118,6 +120,10 @@ app.use('/api/reporting', reportingRouter);
 app.use('/api/loyalty', loyaltyRouter);
 // ─── Intégration FeetiPlay ────────────────────────────────────────────────────
 app.use('/api/integration', integrationRouter);
+// ─── Consentement événements live/mixte ──────────────────────────────────────
+app.use('/api/live-event-consent', liveEventConsentRouter);
+// ─── Paiements (simulation) ───────────────────────────────────────────────────
+app.use('/api/payments', paymentRouter);
 
 
 
