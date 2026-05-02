@@ -1,10 +1,12 @@
 import { StatusCodes } from "http-status-codes";
 import { randomUUID } from "crypto";
 import { AppError } from "../utils/AppError.js";
+import { logger } from "../utils/logger.js";
 import { eventRepository } from "../repositories/event.repository.js";
 import { ticketRepository } from "../repositories/ticket.repository.js";
 import { prisma } from "../config/database.js";
 import { feetiPlaySyncService } from "./feetiPlaySync.service.js";
+import { firestoreSyncService } from "./firestore-sync.service.js";
 
 const FEETIPLAY_LIVE_ID_PREFIX = "feeti2_live_";
 
@@ -93,7 +95,15 @@ export const eventService = {
       return mapSyncedLiveEvent(syncedEvent);
     }
 
-    return eventRepository.create(data);
+    // Créer dans PostgreSQL
+    const event = await eventRepository.create(data);
+    
+    // Synchroniser dans Firestore
+    await firestoreSyncService.syncEvent(event).catch((err) => {
+      logger.error(`Erreur sync Firestore pour event ${event.id}:`, err);
+    });
+    
+    return event;
   },
 
   async getOrganizerEvents(organizerId: string) {
@@ -148,7 +158,16 @@ export const eventService = {
         );
       }
     }
-    return eventRepository.delete(eventId);
+    
+    // Supprimer de PostgreSQL
+    const deleted = await eventRepository.delete(eventId);
+    
+    // Supprimer de Firestore
+    await firestoreSyncService.deleteDocument('events', eventId).catch((err) => {
+      logger.error(`Erreur suppression Firestore pour event ${eventId}:`, err);
+    });
+    
+    return deleted;
   },
 
   async toggleSalesBlocked(eventId: string, organizerId: string, role?: string) {

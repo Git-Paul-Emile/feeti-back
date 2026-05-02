@@ -1,0 +1,22 @@
+import { Router } from "express";
+import { authenticate, requireRole } from "../middlewares/authenticate.js";
+import { reportingController } from "../controllers/reporting.controller.js";
+const router = Router();
+const wrap = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+router.use(authenticate);
+// ─── Dashboard organisateur ──────────────────────────────────────────
+router.get("/dashboard", requireRole("organizer", "admin", "super_admin"), wrap(reportingController.dashboardOrganisateur));
+// ─── Dashboard admin ─────────────────────────────────────────────────
+router.get("/admin/dashboard", requireRole("admin", "super_admin"), wrap(reportingController.dashboardAdmin));
+// ─── Rapports spécifiques ────────────────────────────────────────────
+router.get("/tva", wrap(reportingController.rapportTVA));
+router.get("/tendances", wrap(reportingController.tendances));
+router.get("/remboursements", wrap(reportingController.remboursements));
+// ─── Export ──────────────────────────────────────────────────────────
+router.get("/export/csv", wrap(reportingController.exportCSV));
+// ─── Audit (admin uniquement) ─────────────────────────────────────────
+router.get("/audit", requireRole("admin", "super_admin"), wrap(reportingController.journalAudit));
+router.get("/audit/integrity", requireRole("admin", "super_admin"), wrap(reportingController.integritéAudit));
+router.get("/audit/:resource/:resourceId", requireRole("admin", "super_admin"), wrap(reportingController.auditRessource));
+export default router;
+//# sourceMappingURL=reporting.routes.js.map

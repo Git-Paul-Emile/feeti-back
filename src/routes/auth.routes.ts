@@ -1,13 +1,21 @@
 import { Router } from "express";
-import { register, login, logout, me, refresh, updateProfile, changePassword, deleteAccount } from "../controller/auth.controller.js";
+import { register, login, logout, me, refresh, updateProfile, changePassword, deleteAccount, registerWithFirebase, loginWithFirebase, verifyFirebaseToken } from "../controller/auth.controller.js";
 import { validateBody } from "../middlewares/validateBody.js";
 import { authenticate } from "../middlewares/authenticate.js";
-import { registerSchema, loginSchema } from "../validators/auth.validator.js";
+import { registerSchema, loginSchema, firebaseRegisterSchema, firebaseLoginSchema } from "../validators/auth.validator.js";
 
 const router = Router();
 
+// Routes existantes (bcrypt)
 router.post("/register", validateBody(registerSchema), register);
 router.post("/login",    validateBody(loginSchema),    login);
+
+// Routes Firebase Auth
+router.post("/firebase/register", validateBody(firebaseRegisterSchema), registerWithFirebase);
+router.post("/firebase/login",    validateBody(firebaseLoginSchema),    loginWithFirebase);
+router.post("/firebase/verify",                                          verifyFirebaseToken);
+
+// Routes protégées
 router.post("/logout",                                 logout);
 router.post("/refresh",                                refresh);
 router.get(    "/me",       authenticate,              me);

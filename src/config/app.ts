@@ -24,6 +24,8 @@ import loyaltyRouter from "../routes/loyalty.routes.js";
 import integrationRouter from "../routes/integration.routes.js";
 import liveEventConsentRouter from "../routes/liveEventConsent.routes.js";
 import paymentRouter from "../routes/payment.routes.js";
+import accessRouter from "../routes/access.routes.js";
+import chatbotRouter from "../routes/chatbot.routes.js";
 
 
 
@@ -39,7 +41,7 @@ const buildLocalhostOrigins = (startPort: number, count: number) =>
 const configuredFrontUrl = process.env.FRONT_URL || 'http://localhost:3000';
 const configuredFeetiPlayUrl = process.env.FEETIPLAY_URL || 'http://localhost:5173';
 
-const allowedOrigins = [
+export const allowedOrigins = [
   configuredFrontUrl,
   configuredFeetiPlayUrl,
   'http://localhost:8080',
@@ -124,6 +126,10 @@ app.use('/api/integration', integrationRouter);
 app.use('/api/live-event-consent', liveEventConsentRouter);
 // ─── Paiements (simulation) ───────────────────────────────────────────────────
 app.use('/api/payments', paymentRouter);
+// ─── Feeti Access — Contrôle d'accès & Gestion des zones ─────────────────────
+app.use('/api/access', accessRouter);
+// ─── Chatbot Dialogflow ───────────────────────────────────────────────────────
+app.use('/api/chatbot', chatbotRouter);
 
 
 

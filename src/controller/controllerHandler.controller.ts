@@ -4,6 +4,7 @@ import { jsonResponse } from "../utils/response.js";
 import { controllerWrapper } from "../utils/ControllerWrapper.js";
 import { AppError } from "../utils/AppError.js";
 import { eventControllerRepository } from "../repositories/eventController.repository.js";
+import { eventService } from "../services/event.service.js";
 import { eventRepository } from "../repositories/event.repository.js";
 import { ticketRepository } from "../repositories/ticket.repository.js";
 import { prisma } from "../config/database.js";
@@ -24,8 +25,11 @@ export const createAndAssignController = controllerWrapper(async (req: Request, 
   }
 
   // Vérifier que l'événement appartient à l'organisateur
-  const event = await eventRepository.findById(eventId);
+  const event = await eventService.getEventById(eventId);
   if (!event) throw new AppError("Événement introuvable", StatusCodes.NOT_FOUND);
+  if (eventId.startsWith("feeti2_live_")) {
+    throw new AppError("Les événements en direct n'ont pas de contrôleurs physiques", StatusCodes.BAD_REQUEST);
+  }
   if (event.organizerId !== organizerId) throw new AppError("Accès refusé", StatusCodes.FORBIDDEN);
 
   // Créer ou récupérer le compte contrôleur
@@ -56,8 +60,11 @@ export const assignExistingController = controllerWrapper(async (req: Request, r
 
   if (!email) throw new AppError("email requis", StatusCodes.BAD_REQUEST);
 
-  const event = await eventRepository.findById(eventId);
+  const event = await eventService.getEventById(eventId);
   if (!event) throw new AppError("Événement introuvable", StatusCodes.NOT_FOUND);
+  if (eventId.startsWith("feeti2_live_")) {
+    throw new AppError("Les événements en direct n'ont pas de contrôleurs physiques", StatusCodes.BAD_REQUEST);
+  }
   if (event.organizerId !== organizerId) throw new AppError("Accès refusé", StatusCodes.FORBIDDEN);
 
   const controller = await prisma.user.findUnique({ where: { email } });
@@ -77,7 +84,7 @@ export const listEventControllers = controllerWrapper(async (req: Request, res: 
   const role = req.user!.role;
   const { eventId } = req.params;
 
-  const event = await eventRepository.findById(eventId);
+  const event = await eventService.getEventById(eventId);
   if (!event) throw new AppError("Événement introuvable", StatusCodes.NOT_FOUND);
 
   const isAdmin = role === "admin" || role === "super_admin";
@@ -96,7 +103,7 @@ export const removeController = controllerWrapper(async (req: Request, res: Resp
   const organizerId = req.user!.userId;
   const { eventId, controllerId } = req.params;
 
-  const event = await eventRepository.findById(eventId);
+  const event = await eventService.getEventById(eventId);
   if (!event) throw new AppError("Événement introuvable", StatusCodes.NOT_FOUND);
   if (event.organizerId !== organizerId) throw new AppError("Accès refusé", StatusCodes.FORBIDDEN);
 

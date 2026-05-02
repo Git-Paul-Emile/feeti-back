@@ -112,3 +112,42 @@ export const refresh = controllerWrapper(async (req: Request, res: Response) => 
     jsonResponse({ status: "success", message: "Token rafraîchi", data: { accessToken } })
   );
 });
+
+// ── Firebase Auth Controllers ───────────────────────────────────────────────
+export const registerWithFirebase = controllerWrapper(async (req: Request, res: Response) => {
+  const { idToken, ...profileData } = req.body;
+  const { user, accessToken, refreshToken } = await authService.registerWithFirebase(idToken, profileData);
+  res.cookie(REFRESH_COOKIE, refreshToken, cookieOptions);
+  res.status(StatusCodes.CREATED).json(
+    jsonResponse({ status: "success", message: "Inscription Firebase réussie", data: { user, accessToken } })
+  );
+});
+
+export const loginWithFirebase = controllerWrapper(async (req: Request, res: Response) => {
+  const { idToken } = req.body;
+  const { user, accessToken, refreshToken } = await authService.loginWithFirebase(idToken);
+  res.cookie(REFRESH_COOKIE, refreshToken, cookieOptions);
+  res.status(StatusCodes.OK).json(
+    jsonResponse({ status: "success", message: "Connexion Firebase réussie", data: { user, accessToken } })
+  );
+});
+
+export const verifyFirebaseToken = controllerWrapper(async (req: Request, res: Response) => {
+  const { idToken } = req.body;
+  const result = await authService.verifyFirebaseToken(idToken);
+  
+  if (result.valid && result.decoded) {
+    res.status(StatusCodes.OK).json(
+      jsonResponse({ status: "success", message: "Token valide", data: { 
+        uid: result.decoded.uid,
+        email: result.decoded.email,
+        name: result.decoded.name,
+        picture: result.decoded.picture,
+      } })
+    );
+  } else {
+    res.status(StatusCodes.UNAUTHORIZED).json(
+      jsonResponse({ status: "error", message: "Token Firebase invalide" })
+    );
+  }
+});

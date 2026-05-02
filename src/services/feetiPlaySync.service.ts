@@ -1,5 +1,5 @@
-const FEETIPLAY_API_BASE_URL = process.env.FEETIPLAY_API_URL ?? "http://localhost:8001/api";
-const FEETI_SYNC_SECRET = process.env.FEETI_SYNC_SECRET ?? "";
+const getApiBaseUrl = () => process.env.FEETIPLAY_API_URL ?? "http://localhost:8001/api";
+const getSyncSecret = () => process.env.FEETI_SYNC_SECRET ?? "";
 
 export interface SyncedLiveEvent {
   id: string;
@@ -61,11 +61,12 @@ async function parseResponse<T>(response: Response): Promise<T> {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${FEETIPLAY_API_BASE_URL}${path}`, {
+  const secret = getSyncSecret();
+  const response = await fetch(`${getApiBaseUrl()}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
-      "x-feeti-sync-secret": FEETI_SYNC_SECRET,
+      "x-feeti-sync-secret": secret,
       ...(init?.headers ?? {}),
     },
     signal: AbortSignal.timeout(10_000),

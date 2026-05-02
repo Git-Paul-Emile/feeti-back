@@ -60,3 +60,27 @@ export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+
+// ── Firebase Auth Schemas ──────────────────────────────────────────────────
+export const firebaseRegisterSchema = z.object({
+  idToken: z.string().min(1, "Le token Firebase est requis"),
+  name: z
+    .string()
+    .min(2, "Le nom doit contenir au moins 2 caractères")
+    .max(50, "Le nom ne peut pas dépasser 50 caractères")
+    .optional(),
+  phone: z
+    .string()
+    .regex(/^\+?[0-9]{8,15}$/, "Numéro de téléphone invalide")
+    .optional()
+    .or(z.literal("")),
+  role: z.enum(["user", "organizer"]).optional(),
+  interests: z.array(z.string()).optional(),
+});
+
+export const firebaseLoginSchema = z.object({
+  idToken: z.string().min(1, "Le token Firebase est requis"),
+});
+
+export type FirebaseRegisterInput = z.infer<typeof firebaseRegisterSchema>;
+export type FirebaseLoginInput = z.infer<typeof firebaseLoginSchema>;

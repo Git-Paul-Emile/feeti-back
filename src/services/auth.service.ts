@@ -3,10 +3,11 @@ import { StatusCodes } from "http-status-codes";
 import { AppError } from "../utils/AppError.js";
 import { authRepository } from "../repositories/auth.repository.js";
 import { generateToken, generateRefreshToken } from "../config/jwt.js";
+import { fbAuth, db, FieldValue } from "../config/firebase-admin.js";
 import type { RegisterInput, LoginInput, UpdateProfileInput, ChangePasswordInput } from "../validators/auth.validator.js";
 import type { Role } from "../generated/prisma/client.js";
 
-function omitPassword<T extends { passwordHash: string }>(user: T) {
+function omitPassword<T extends { passwordHash?: string }>(user: T) {
   const { passwordHash: _, ...rest } = user;
   return rest;
 }
@@ -29,6 +30,21 @@ export const authService = {
       role: (data.role || "user") as Role,
       interests: data.interests ? JSON.stringify(data.interests) : "[]",
     });
+
+    try {
+      await db.collection("users").doc(user.id).set({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone || null,
+        role: user.role,
+        interests: data.interests || [],
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp()
+      });
+    } catch (err) {
+      console.error("Erreur lors de l'insertion dans Firestore :", err);
+    }
 
     const accessToken = generateToken({ userId: user.id, role: user.role });
     const refreshToken = generateRefreshToken({ userId: user.id });
@@ -104,5 +120,124 @@ export const authService = {
     }
 
     await authRepository.deleteUser(userId);
+  },
+
+  // ── Firebase Auth ─────────────────────────────────────────────────────────
+  async registerWithFirebase(idToken: string, profileData: Partial<RegisterInput>) {
+    // Vérifier le token Firebase
+    const decodedToken = await fbAuth.verifyIdToken(idToken);
+    const firebaseUid = decodedToken.uid;
+    const firebaseEmail = decodedToken.email;
+    const firebaseName = decodedToken.name || profileData.name || "Utilisateur";
+    const firebasePhoto = decodedToken.picture;
+
+    if (!firebaseEmail) {
+      throw new AppError("Email non trouvé dans le token Firebase", StatusCodes.BAD_REQUEST);
+    }
+
+    // Chercher ou créer l'utilisateur en base
+    let user = await authRepository.findByEmail(firebaseEmail);
+
+    if (!user) {
+      // Créer un nouvel utilisateur
+      user = await authRepository.createUser({
+        name: firebaseName,
+        email: firebaseEmail,
+        phone: profileData.phone || undefined,
+        passwordHash: "", // Pas de mot de passe pour utilisateurs Firebase
+        role: (profileData.role || "user") as Role,
+        interests: profileData.interests ? JSON.stringify(profileData.interests) : "[]",
+        firebaseUid,
+        photoUrl: firebasePhoto || null,
+      });
+    } else {
+      // Lier le compte Firebase existant si pas déjà lié
+      if (!user.firebaseUid) {
+        await authRepository.updateUser(user.id, { firebaseUid });
+        user.firebaseUid = firebaseUid;
+      }
+    }
+
+    try {
+      await db.collection("users").doc(user.id).set({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone || null,
+        role: user.role,
+        interests: profileData.interests || [],
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp()
+      }, { merge: true });
+    } catch (err) {
+      console.error("Erreur lors de l'insertion dans Firestore :", err);
+    }
+
+    const accessToken = generateToken({ userId: user.id, role: user.role });
+    const refreshToken = generateRefreshToken({ userId: user.id });
+
+    return { user: omitPassword(user), accessToken, refreshToken };
+  },
+
+  async loginWithFirebase(idToken: string) {
+    // Vérifier le token Firebase
+    const decodedToken = await fbAuth.verifyIdToken(idToken);
+    const firebaseUid = decodedToken.uid;
+    const firebaseEmail = decodedToken.email;
+
+    if (!firebaseEmail) {
+      throw new AppError("Email non trouvé dans le token Firebase", StatusCodes.BAD_REQUEST);
+    }
+
+    // Chercher l'utilisateur par email ou firebaseUid
+    let user = await authRepository.findByEmail(firebaseEmail);
+
+    if (!user) {
+      // Créer un compte automatiquement pour les nouveaux utilisateurs Google
+      user = await authRepository.createUser({
+        name: decodedToken.name || "Utilisateur",
+        email: firebaseEmail,
+        passwordHash: "",
+        role: "user" as Role,
+        interests: "[]",
+        firebaseUid,
+        photoUrl: decodedToken.picture || null,
+      });
+      
+      try {
+        await db.collection("users").doc(user.id).set({
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone || null,
+          role: user.role,
+          interests: [],
+          createdAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp()
+        }, { merge: true });
+      } catch (err) {
+        console.error("Erreur lors de l'insertion dans Firestore :", err);
+      }
+    } else {
+      // Mettre à jour le firebaseUid si pas encore lié
+      if (!user.firebaseUid) {
+        await authRepository.updateUser(user.id, { firebaseUid });
+        user.firebaseUid = firebaseUid;
+      }
+    }
+
+    const accessToken = generateToken({ userId: user.id, role: user.role });
+    const refreshToken = generateRefreshToken({ userId: user.id });
+
+    return { user: omitPassword(user), accessToken, refreshToken };
+  },
+
+  async verifyFirebaseToken(idToken: string) {
+    try {
+      const decodedToken = await fbAuth.verifyIdToken(idToken);
+      return { valid: true, decoded: decodedToken };
+    } catch (error) {
+      return { valid: false, decoded: null };
+    }
   },
 };

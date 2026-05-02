@@ -1,17 +1,12 @@
 import dotenv from "dotenv";
-import type { Server } from "http";
+import { createServer } from "http";
 import { connectToDatabase } from "./config/database.js";
-import app from "./config/app.js";
+import app, { allowedOrigins } from "./config/app.js";
+import { initSocket } from "./config/socket.js";
 
 dotenv.config();
 
 const DEFAULT_BACKEND_PORT = 8000;
-
-const listenOnPort = (port: number) =>
-  new Promise<Server>((resolve, reject) => {
-    const server = app.listen(port, () => resolve(server));
-    server.once("error", reject);
-  });
 
 const initializeApp = async () => {
   try {
@@ -22,7 +17,14 @@ const initializeApp = async () => {
       ? configuredPort
       : DEFAULT_BACKEND_PORT;
 
-    await listenOnPort(port);
+    const httpServer = createServer(app);
+    initSocket(httpServer, allowedOrigins);
+
+    await new Promise<void>((resolve, reject) => {
+      httpServer.listen(port, resolve);
+      httpServer.once("error", reject);
+    });
+
     process.env.PORT = String(port);
     console.log(`[feeti2-back] port configure: ${port}`);
     console.log(`[feeti2-back] serveur demarre sur http://localhost:${port}`);

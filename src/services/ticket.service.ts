@@ -2,6 +2,7 @@ import { StatusCodes } from "http-status-codes";
 import { AppError } from "../utils/AppError.js";
 import { ticketRepository } from "../repositories/ticket.repository.js";
 import { eventRepository } from "../repositories/event.repository.js";
+import { eventService } from "./event.service.js";
 import { prisma } from "../config/database.js";
 import { randomUUID } from "crypto";
 import { createHmac } from "crypto";
@@ -143,7 +144,7 @@ export const ticketService = {
   },
 
   async getEventTickets(eventId: string, organizerId: string, role?: string) {
-    const event = await eventRepository.findById(eventId);
+    const event = await eventService.getEventById(eventId);
     if (!event) throw new AppError("Événement introuvable", StatusCodes.NOT_FOUND);
     const isAdmin = role === "admin" || role === "super_admin";
     if (!isAdmin && event.organizerId !== organizerId) {

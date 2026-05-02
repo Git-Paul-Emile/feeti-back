@@ -50,6 +50,8 @@ model User {
   passwordHash String
   role         Role           @default(user)
   interests    String         @default("[]") // JSON array of event category slugs
+  firebaseUid  String?        @unique // UID Firebase Auth (pour connexion Firebase)
+  photoUrl     String?        // URL de la photo de profil (Firebase ou autre)
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   events              Event[]
@@ -118,6 +120,10 @@ model Event {
   featuredRequests FeaturedRequest[]
   controllers  EventController[]
   transactions Transaction[]
+  // Feeti Access
+  eventZones          EventZone[]
+  participantCategories ParticipantCategory[]
+  accessBadges        AccessBadge[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   // Système de mise en avant par pack promotionnel
@@ -328,6 +334,8 @@ model Ticket {
   deliveryStatus   DeliveryStatus?
   deliveryAddress  DeliveryAddress?
   transaction      Transaction?
+  // Feeti Access
+  accessBadge      AccessBadge?
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 }
@@ -879,6 +887,145 @@ model LoyaltyBonus {
   updatedAt   DateTime @updatedAt
 
   @@index([isActive])
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  FEETI ACCESS — Contrôle d'accès & Gestion des zones
+// ═══════════════════════════════════════════════════════════════════════
+
+enum ZoneAccessLevel {
+  OUI    // accès accordé
+  NON    // accès refusé
+  COND   // accès conditionnel
+}
+
+enum BadgeStatus {
+  active
+  revoked
+  expired
+}
+
+enum AccessResult {
+  granted
+  denied
+  conditional
+}
+
+// Zone d'accès configurée pour un événement (basée sur 10 templates prédéfinis)
+model EventZone {
+  id           String   @id @default(cuid())
+  eventId      String
+  event        Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  code         String   // Z1 … Z10
+  name         String
+  description  String?
+  color        String   @default("#3B82F6")
+  isActive     Boolean  @default(true)
+  maxCapacity  Int?
+  currentCount Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  accessRights ZoneAccessRight[]
+  accessLogs   AccessLog[]
+
+  @@unique([eventId, code])
+  @@index([eventId])
+}
+
+// Catégorie de participants pour un événement
+model ParticipantCategory {
+  id          String   @id @default(cuid())
+  eventId     String
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  color       String   @default("#6B7280")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  accessRights ZoneAccessRight[]
+  badges       AccessBadge[]
+
+  @@unique([eventId, name])
+  @@index([eventId])
+}
+
+// Matrice droits d'accès : catégorie ↔ zone
+model ZoneAccessRight {
+  id          String              @id @default(cuid())
+  categoryId  String
+  category    ParticipantCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  zoneId      String
+  zone        EventZone           @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  accessLevel ZoneAccessLevel     @default(NON)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@unique([categoryId, zoneId])
+  @@index([zoneId])
+}
+
+// Badge QR par participant (lié à un ticket ou créé indépendamment)
+model AccessBadge {
+  id           String              @id @default(cuid())
+  eventId      String
+  event        Event               @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  ticketId     String?             @unique
+  ticket       Ticket?             @relation(fields: [ticketId], references: [id])
+  categoryId   String
+  category     ParticipantCategory @relation(fields: [categoryId], references: [id])
+  holderName   String
+  holderEmail  String
+  holderPhone  String?
+  holderPhoto  String?
+  qrCode       String              @unique
+  qrSecret     String
+  status       BadgeStatus         @default(active)
+  sentAt       DateTime?
+  revokedAt    DateTime?
+  revokedById  String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  accessLogs     AccessLog[]
+  suspectReports SuspectBadgeReport[]
+
+  @@index([eventId])
+  @@index([status])
+}
+
+// Journal de chaque tentative de scan
+model AccessLog {
+  id            String       @id @default(cuid())
+  badgeId       String
+  badge         AccessBadge  @relation(fields: [badgeId], references: [id])
+  zoneId        String
+  zone          EventZone    @relation(fields: [zoneId], references: [id])
+  eventId       String
+  scannedById   String
+  result        AccessResult
+  refusalReason String?
+  offlineSync   Boolean      @default(false)
+  scannedAt     DateTime     @default(now())
+
+  @@index([badgeId])
+  @@index([zoneId])
+  @@index([eventId])
+  @@index([scannedAt])
+}
+
+// Signalement de badge suspect par un agent
+model SuspectBadgeReport {
+  id           String      @id @default(cuid())
+  badgeId      String
+  badge        AccessBadge @relation(fields: [badgeId], references: [id])
+  reportedById String
+  reason       String
+  resolved     Boolean     @default(false)
+  createdAt    DateTime    @default(now())
+
+  @@index([badgeId])
 }
 
 // ─── Journal d'accès VIP événements ─────────────────────────────────────────

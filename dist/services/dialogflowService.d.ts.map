@@ -1,0 +1,1 @@
+{"version":3,"file":"dialogflowService.d.ts","sourceRoot":"","sources":["../../src/services/dialogflowService.ts"],"names":[],"mappings":"AAEA,KAAK,aAAa,GAAG;IAAE,KAAK,EAAE,MAAM,CAAC;IAAC,MAAM,EAAE,MAAM,GAAG,IAAI,CAAC;IAAC,UAAU,EAAE,MAAM,CAAA;CAAE,CAAC;AAmElF,wBAAsB,YAAY,CAAC,OAAO,EAAE,MAAM,EAAE,SAAS,EAAE,MAAM,GAAG,OAAO,CAAC,aAAa,CAAC,CA+B7F"}

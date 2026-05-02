@@ -10,7 +10,19 @@ export const authRepository = {
     return prisma.user.findUnique({ where: { id } });
   },
 
-  async updateUser(id: string, data: { name?: string; email?: string; phone?: string | null; passwordHash?: string; interests?: string }) {
+  async findByFirebaseUid(firebaseUid: string) {
+    return prisma.user.findUnique({ where: { firebaseUid } });
+  },
+
+  async updateUser(id: string, data: { 
+    name?: string; 
+    email?: string; 
+    phone?: string | null; 
+    passwordHash?: string; 
+    interests?: string;
+    firebaseUid?: string;
+    photoUrl?: string | null;
+  }) {
     return prisma.user.update({ where: { id }, data });
   },
 
@@ -25,7 +37,13 @@ export const authRepository = {
     passwordHash: string;
     role: Role;
     interests?: string;
+    firebaseUid?: string;
+    photoUrl?: string | null;
   }) {
     return prisma.user.create({ data });
+  },
+
+  async findAll() {
+    return prisma.user.findMany();
   },
 };
